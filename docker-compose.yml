@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: desafio-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: desafio_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: desafio-backend
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: 'mysql://root:root@db:3306/desafio_db'
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: desafio-frontend
+    ports:
+      - '5173:5173'
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
