@@ -10,21 +10,21 @@ export class PricesService {
   constructor(
     @InjectRepository(Price)
     private pricesRepository: Repository<Price>,
-  ) {}
+  ) { }
 
   create(createPriceDto: CreatePriceDto) {
     const newPrice = this.pricesRepository.create({
       value: createPriceDto.value,
       product: { id: createPriceDto.productId },
     });
-    
+
     return this.pricesRepository.save(newPrice);
   }
 
   findAll() {
     return this.pricesRepository.find({
       relations: ['product'],
-      order: { createdAt: 'DESC' },
+      order: { id: 'ASC' },
     });
   }
 
@@ -42,7 +42,7 @@ export class PricesService {
 
   async update(id: number, updatePriceDto: UpdatePriceDto) {
     const price = await this.findOne(id);
-    
+
     if (updatePriceDto.productId) {
       price.product = { id: updatePriceDto.productId } as any;
     }

@@ -17,7 +17,12 @@ export class SuppliersService {
   }
 
   findAll() {
-    return this.suppliersRepository.find();
+    return this.suppliersRepository.find({
+      relations: ['products'],
+      order: {
+        id: 'ASC',
+      },
+    });
   }
 
   async findOne(id: number) {
