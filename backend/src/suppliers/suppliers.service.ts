@@ -1,26 +1,43 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Supplier } from './entities/supplier.entity';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 
 @Injectable()
 export class SuppliersService {
+  constructor(
+    @InjectRepository(Supplier)
+    private suppliersRepository: Repository<Supplier>,
+  ) { }
+
   create(createSupplierDto: CreateSupplierDto) {
-    return 'This action adds a new supplier';
+    return this.suppliersRepository.save(createSupplierDto);
   }
 
   findAll() {
-    return `This action returns all suppliers`;
+    return this.suppliersRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} supplier`;
+  async findOne(id: number) {
+    const supplier = await this.suppliersRepository.findOneBy({ id });
+    if (!supplier) {
+      throw new NotFoundException(`Fornecedor com ID ${id} não encontrado`);
+    }
+    return supplier;
   }
 
-  update(id: number, updateSupplierDto: UpdateSupplierDto) {
-    return `This action updates a #${id} supplier`;
+  async update(id: number, updateSupplierDto: UpdateSupplierDto) {
+    const supplier = await this.findOne(id);
+
+    const updatedSupplier = this.suppliersRepository.merge(supplier, updateSupplierDto);
+    return this.suppliersRepository.save(updatedSupplier);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} supplier`;
+  async remove(id: number) {
+    const supplier = await this.findOne(id);
+
+    return this.suppliersRepository.remove(supplier);
   }
 }
