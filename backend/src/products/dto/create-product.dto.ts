@@ -12,4 +12,8 @@ export class CreateProductDto {
     @IsNumber()
     @IsNotEmpty()
     supplierId!: number;
+
+    @IsNumber()
+    @IsNotEmpty()
+    initialPrice!: number;
 }

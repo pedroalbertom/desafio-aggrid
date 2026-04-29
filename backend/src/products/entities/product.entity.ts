@@ -19,6 +19,6 @@ export class Product {
     @ManyToOne(() => Supplier, (supplier) => supplier.products, { onDelete: 'CASCADE' })
     supplier!: Supplier;
 
-    @OneToMany(() => Price, (price) => price.product)
+    @OneToMany(() => Price, (price) => price.product, { cascade: true })
     prices!: Price[];
 }

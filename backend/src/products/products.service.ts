@@ -17,6 +17,9 @@ export class ProductsService {
       name: createProductDto.name,
       description: createProductDto.description,
       supplier: { id: createProductDto.supplierId },
+      prices: [
+        { value: createProductDto.initialPrice }
+      ],
     });
 
     return this.productsRepository.save(product);
