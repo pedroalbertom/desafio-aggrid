@@ -12,7 +12,7 @@ export class SuppliersService {
     private suppliersRepository: Repository<Supplier>,
   ) { }
 
-  create(createSupplierDto: CreateSupplierDto) {
+  async create(createSupplierDto: CreateSupplierDto) {
     return this.suppliersRepository.save(createSupplierDto);
   }
 

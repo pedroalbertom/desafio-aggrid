@@ -8,6 +8,7 @@ import { ProductsModule } from './products/products.module';
 import { Supplier } from './suppliers/entities/supplier.entity';
 import { Price } from './prices/entities/price.entity';
 import { Product } from './products/entities/product.entity';
+import { DatabaseSeedService } from './database/seed.service';
 
 @Module({
   imports: [
@@ -20,11 +21,14 @@ import { Product } from './products/entities/product.entity';
       database: 'desafio_db',
       entities: [Supplier, Price, Product],
       synchronize: true,
+      dropSchema: true
     }),
+    TypeOrmModule.forFeature([Supplier, Price, Product]),
     SuppliersModule,
     PricesModule,
-    ProductsModule],
+    ProductsModule
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DatabaseSeedService],
 })
 export class AppModule { }
