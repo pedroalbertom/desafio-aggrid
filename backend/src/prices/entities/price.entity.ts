@@ -12,6 +12,6 @@ export class Price {
     @CreateDateColumn()
     createdAt!: Date;
 
-    @ManyToOne(() => Product, (product) => product.prices)
+    @ManyToOne(() => Product, (product) => product.prices, { onDelete: 'CASCADE' })
     product!: Product;
 }
