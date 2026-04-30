@@ -15,47 +15,10 @@ export default function App() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', supplierId: '', price: '' });
+
+  const [productForm, setProductForm] = useState({ name: '', supplierId: '', price: '' });
+  const [supplierForm, setSupplierForm] = useState({ name: '', email: '' });
   const [editingItem, setEditingItem] = useState<Product | Supplier | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (view === 'products') {
-        if (editingItem) {
-          await updateProduct(editingItem.id, { name: formData.name, supplierId: Number(formData.supplierId), initialPrice: Number(formData.price) });
-        } else {
-          await createProduct({ name: formData.name, supplierId: Number(formData.supplierId), initialPrice: Number(formData.price) });
-        }
-      } else {
-        if (editingItem) {
-          await updateSupplier(editingItem.id, { name: formData.name, email: formData.email });
-        } else {
-          await createSupplier({ name: formData.name, email: formData.email });
-        }
-      }
-
-      await loadData();
-      setIsModalOpen(false);
-      setEditingItem(null); // Importante limpar aqui também
-      setFormData({ name: '', email: '', supplierId: '', price: '' });
-    } catch (error) {
-      alert("Erro ao salvar. Verifique os campos.");
-    }
-  };
-
-  const handleEdit = (item: any) => {
-    setEditingItem(item);
-
-    setFormData({
-      name: item.name || '',
-      email: item.email || '',
-      supplierId: item.supplier?.id ? String(item.supplier.id) : '',
-      price: item.prices[0].value
-    });
-
-    setIsModalOpen(true);
-  };
 
   const loadData = async () => {
     try {
@@ -68,6 +31,66 @@ export default function App() {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  const resetForms = () => {
+    setProductForm({ name: '', supplierId: '', price: '' });
+    setSupplierForm({ name: '', email: '' });
+    setEditingItem(null);
+    setIsModalOpen(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (view === 'products') {
+        const payload = {
+          name: productForm.name,
+          supplierId: Number(productForm.supplierId),
+          initialPrice: Number(productForm.price)
+        };
+
+        if (editingItem) {
+          await updateProduct(editingItem.id, payload);
+        } else {
+          await createProduct(payload);
+        }
+      } else {
+        const payload = { name: supplierForm.name, email: supplierForm.email };
+        if (editingItem) {
+          await updateSupplier(editingItem.id, payload);
+        } else {
+          await createSupplier(payload);
+        }
+      }
+
+      await loadData();
+
+      if (editingItem && selectedProduct?.id === editingItem.id) {
+        setSelectedProduct(null);
+      }
+
+      resetForms();
+    } catch (error) {
+      alert("Erro ao salvar. Verifique se o backend está criando o novo registro de preço.");
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingItem(item);
+    if (view === 'products') {
+      setProductForm({
+        name: item.name || '',
+        supplierId: item.supplier?.id ? String(item.supplier.id) : '',
+        price: item.prices?.[0]?.value !== undefined ? String(item.prices[0].value) : ''
+      });
+    } else {
+      setSupplierForm({
+        name: item.name || '',
+        email: item.email || ''
+      });
+    }
+    setIsModalOpen(true);
+  };
 
   const handleDelete = async (id: number) => {
     const message = view === 'products' ? 'Este produto?' : 'Este fornecedor?';
@@ -91,11 +114,8 @@ export default function App() {
     { field: 'supplier.name', headerName: 'Fornecedor', flex: 1 },
     {
       headerName: 'Preço Atual',
-      valueGetter: (params: any) => {
-        if (!params.data || !params.data.prices) return 0;
-        return params.data.prices[0].value;
-      },
-      valueFormatter: (params: any) => `R$ ${params.value}`
+      valueGetter: (params: any) => params.data.prices[0].value,
+      valueFormatter: (params: any) => `R$ ${Number(params.value).toFixed(2)}`
     },
     {
       headerName: 'Ações',
@@ -122,14 +142,13 @@ export default function App() {
     { field: 'email', headerName: 'E-mail', flex: 1 },
     {
       headerName: 'Ações',
-      width: 100,
+      width: 120,
       cellRenderer: (params: any) => (
-        <div style={{ paddingTop: '4px' }}>
-          <button
-            onClick={() => handleDelete(params.data.id)}
-            style={{ cursor: 'pointer', border: 'none', background: 'none' }}
-            title="Deletar"
-          >
+        <div style={{ display: 'flex', gap: '12px', paddingTop: '4px' }}>
+          <button onClick={() => handleEdit(params.data)} title="Editar" style={{ cursor: 'pointer', border: 'none', background: 'none' }}>
+            <Pencil size={18} color="#059669" />
+          </button>
+          <button onClick={() => handleDelete(params.data.id)} title="Deletar" style={{ cursor: 'pointer', border: 'none', background: 'none' }}>
             <Trash2 size={18} color="#dc2626" />
           </button>
         </div>
@@ -147,13 +166,13 @@ export default function App() {
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
-            onClick={() => setView('products')}
+            onClick={() => { setView('products'); resetForms(); }}
             style={{ padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #cbd5e1', backgroundColor: view === 'products' ? '#0f172a' : 'white', color: view === 'products' ? 'white' : '#0f172a' }}
           >
             Produtos
           </button>
           <button
-            onClick={() => setView('suppliers')}
+            onClick={() => { setView('suppliers'); resetForms(); }}
             style={{ padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', border: '1px solid #cbd5e1', backgroundColor: view === 'suppliers' ? '#0f172a' : 'white', color: view === 'suppliers' ? 'white' : '#0f172a' }}
           >
             Fornecedores
@@ -161,13 +180,7 @@ export default function App() {
         </div>
 
         <button
-          onClick={() => {
-            setEditingItem(null);
-            setFormData({ name: '', email: '', supplierId: '', price: '' });
-            setIsModalOpen(true);
-          }
-          }
-
+          onClick={() => { resetForms(); setIsModalOpen(true); }}
           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
         >
           <Plus size={18} /> Novo {view === 'products' ? 'Produto' : 'Fornecedor'}
@@ -178,7 +191,7 @@ export default function App() {
         <div style={{ height: '500px', width: '100%', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           <AgGridReact
             theme={themeQuartz}
-            rowData={(view === 'products' ? products : suppliers) as (Product | Supplier)[]}
+            rowData={(view === 'products' ? products : suppliers) as any[]}
             columnDefs={(view === 'products' ? productCols : supplierCols) as any}
             animateRows={true}
             pagination={true}
@@ -191,54 +204,19 @@ export default function App() {
           <div style={{ marginTop: '20px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0 }}>Histórico de Preços: {selectedProduct.name}</h3>
-              <button
-                onClick={() => setSelectedProduct(null)}
-                style={{ cursor: 'pointer', border: 'none', background: 'none', color: '#64748b' }}
-              >
+              <button onClick={() => setSelectedProduct(null)} style={{ cursor: 'pointer', border: 'none', background: 'none', color: '#64748b' }}>
                 Fechar X
               </button>
             </div>
 
             <div style={{ height: '300px', width: '100%', padding: '10px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={selectedProduct.prices ? [...selectedProduct.prices].reverse() : []}
-                  margin={{ top: 40, right: 30, left: 20, bottom: 20 }}
-                >
+                <LineChart data={selectedProduct.prices ? [...selectedProduct.prices].reverse() : []} margin={{ top: 40, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-
-                  <XAxis
-                    dataKey="createdAt"
-                    tickFormatter={(tick) => new Date(tick).toLocaleDateString('pt-BR')}
-                    minTickGap={30}
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    dy={10}
-                  />
-
-                  <YAxis
-                    width={100}
-                    tickFormatter={(val) => `R$ ${val.toFixed(2)}`}
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    domain={['dataMin - 100', 'dataMax + 100']}
-                    allowDataOverflow={false}
-                  />
-
-                  <Tooltip
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    formatter={(value) => [`R$ ${value}`, "Preço"]}
-                    labelFormatter={(label) => `Data: ${new Date(label).toLocaleDateString('pt-BR')}`}
-                  />
-
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    key="value"
-                    stroke="#2563eb"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6 }}
-                    animationDuration={1000}
-                  />
+                  <XAxis dataKey="createdAt" tickFormatter={(t) => new Date(t).toLocaleDateString('pt-BR')} minTickGap={30} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                  <YAxis width={100} tickFormatter={(v) => `R$ ${Number(v).toFixed(2)}`} tick={{ fontSize: 12, fill: '#64748b' }} domain={[0, 'dataMax + 100']} />
+                  <Tooltip formatter={(v) => [`R$ ${Number(v).toFixed(2)}`, "Preço"]} labelFormatter={(l) => `Data: ${new Date(l).toLocaleDateString('pt-BR')}`} />
+                  <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', stroke: '#fff' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -246,65 +224,36 @@ export default function App() {
         )}
       </main>
 
-      {
-        isModalOpen && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-            <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}>
-              <h2 style={{ marginTop: 0, marginBottom: '20px' }}>{editingItem ? 'Editar' : 'Novo'} {view === 'products' ? 'Produto' : 'Fornecedor'}</h2>
+      {isModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '20px' }}>{editingItem ? 'Editar' : 'Novo'} {view === 'products' ? 'Produto' : 'Fornecedor'}</h2>
 
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <input
-                  placeholder="Nome"
-                  required
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                />
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {view === 'products' ? (
+                <>
+                  <input placeholder="Nome" required value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  <select required value={productForm.supplierId} onChange={e => setProductForm({ ...productForm, supplierId: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                    <option value="">Selecione o Fornecedor</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                  <input type="number" placeholder="Preço (R$)" required value={productForm.price} onChange={e => setProductForm({ ...productForm, price: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                </>
+              ) : (
+                <>
+                  <input placeholder="Nome" required value={supplierForm.name} onChange={e => setSupplierForm({ ...supplierForm, name: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  <input type="email" placeholder="E-mail" required value={supplierForm.email} onChange={e => setSupplierForm({ ...supplierForm, email: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                </>
+              )}
 
-                {view === 'products' ? (
-                  <>
-                    <select
-                      required
-                      value={formData.supplierId}
-                      onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
-                      style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    >
-                      <option value="">Selecione o Fornecedor</option>
-                      {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                    <input
-                      type="number"
-                      placeholder="Preço Inicial (R$)"
-                      required
-                      value={formData.price}
-                      onChange={e => setFormData({ ...formData, price: e.target.value })}
-                      style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                    />
-                  </>
-                ) : (
-                  <input
-                    type="email"
-                    placeholder="E-mail"
-                    required
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  />
-                )}
-
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  <button type="button" onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer', background: 'white' }}>
-                    Cancelar
-                  </button>
-                  <button type="submit" style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: '#0f172a', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
-                    Salvar
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={resetForms} style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer', background: 'white' }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: '#0f172a', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>Salvar</button>
+              </div>
+            </form>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+    </div>
   );
 }

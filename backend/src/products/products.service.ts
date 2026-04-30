@@ -56,6 +56,12 @@ export class ProductsService {
       product.supplier = { id: updateProductDto.supplierId } as any;
     }
 
+    if (updateProductDto.initialPrice !== undefined) {
+      const newPrice = { value: updateProductDto.initialPrice };
+      if (!product.prices) product.prices = [];
+      product.prices.push(newPrice as any);
+    }
+
     this.productsRepository.merge(product, updateProductDto);
     return this.productsRepository.save(product);
   }
