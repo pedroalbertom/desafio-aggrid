@@ -1,7 +1,3 @@
-Com certeza! Um bom README.md é a porta de entrada para qualquer avaliador técnico. Ele deve ser direto, profissional e destacar as tecnologias que você domina.
-
-Aqui está um modelo sob medida para o seu projeto:
-
 📦 Stock Manager - Full Stack Challenge
 Sistema robusto para gerenciamento de estoque, permitindo o controle de produtos e fornecedores, com visualização de histórico de preços por meio de gráficos interativos.
 
