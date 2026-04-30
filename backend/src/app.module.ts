@@ -9,12 +9,16 @@ import { Supplier } from './suppliers/entities/supplier.entity';
 import { Price } from './prices/entities/price.entity';
 import { Product } from './products/entities/product.entity';
 import { DatabaseSeedService } from './database/seed.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: process.env.DB_HOST || 'db',
+      host: process.env.DB_HOST || 'localhost',
       port: 3306,
       username: 'root',
       password: 'root',
